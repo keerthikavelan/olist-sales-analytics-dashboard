@@ -1,0 +1,81 @@
+
+/* Creation of
+	Fact Table: fact_order_items
+    Dimension Table: dim_customer, dim_seller, dim_product, dim_date*/
+DROP TABLE fact_order_items;
+CREATE TABLE fact_order_items AS
+
+SELECT 
+    o.order_id,
+    o.customer_id,
+    o.order_status,
+    o.order_purchase_timestamp,
+    o.order_delivered_customer_date,
+    o.order_estimated_delivery_date,
+    c.customer_unique_id,
+
+    i.order_item_id,
+    i.product_id,
+    i.seller_id,
+    i.price,
+    i.freight_value
+
+FROM order_items i
+LEFT JOIN orders o
+ON i.order_id = o.order_id
+
+LEFT JOIN customers c
+ON o.customer_id = c.customer_id;
+
+ALTER TABLE fact_order_items
+MODIFY order_purchase_timestamp DATETIME,
+MODIFY order_delivered_customer_date DATETIME;
+
+DROP TABLE dim_customer;
+CREATE TABLE dim_customer AS
+
+SELECT 
+    customer_id,
+    customer_city,
+    customer_state
+
+FROM customers;
+
+DROP TABLE dim_product;
+CREATE TABLE dim_product AS
+
+SELECT 
+    product_id,
+    product_category_name
+
+FROM products;
+
+DROP TABLE dim_seller;
+CREATE TABLE dim_seller AS
+
+SELECT 
+    seller_id,
+    seller_city,
+    seller_state
+
+FROM sellers;
+
+DROP TABLE dim_date;
+CREATE TABLE dim_date AS
+WITH RECURSIVE calendar AS (
+    SELECT DATE('2016-09-04') AS order_date
+    UNION ALL
+    SELECT DATE_ADD(order_date, INTERVAL 1 DAY)
+    FROM calendar
+    WHERE order_date < '2018-10-17'
+)
+SELECT
+    order_date,
+    YEAR(order_date) AS order_year,
+    MONTH(order_date) AS month_number,
+    MONTHNAME(order_date) AS month_name,
+    CONCAT('Q', QUARTER(order_date)) AS quarter,
+    DAY(order_date) AS day_number,
+    DAYNAME(order_date) AS day_name,
+    WEEK(order_date) AS week_number
+FROM calendar;
